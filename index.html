@@ -61,6 +61,13 @@
             gap: 15px; /* Smaller gap */
             margin-top: 15px; /* Smaller margin */
         }
+        
+        .folder-icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Slightly smaller icons */
+            gap: 15px; /* Smaller gap */
+            margin-top: 15px; /* Smaller margin */
+        }
 
         .app-icon, .folder-icon, .minigame-icon {
             cursor: pointer;
@@ -92,7 +99,7 @@
         }
 
         .folder-content {
-            display: none;
+            display: grid;
             background-color: #333;
             padding: 20px;
             border-radius: 5px;
@@ -100,6 +107,9 @@
             width: 80%;
             max-width: 600px;
             text-align: center;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Slightly smaller icons */
+            gap: 15px; /* Smaller gap */
+            margin-top: 15px; /* Smaller margin */
         }
 
         .folder-content h2 {
@@ -124,7 +134,7 @@
         }
 
         .back-button {
-            width: 75px;
+            width: 125px;
             height:25px;
             cursor: pointer;
             padding: 8px 16px; /* Smaller padding */
@@ -151,24 +161,24 @@
                 <h2></h2></h2>
                 <div class="icon-grid">
                     <div class="folder-icon" onclick="openFolder('food_prep_folder')">
-                        <img src="folder1.png" alt="Food Prep">
+                        <img src="folder1.png" alt="">
                         <div>
                         <span>Food Prep</span>
                         </div>
                     </div>
-                    <div class="folder-icon" onclick="openFolder('arcade_folder')">
-                        <img src="path/to/arcade_folder_icon.png" alt="Arcade">
+                    <div class="folder-icon" onclick="openFolder('fazcade_folder')">
+                        <img src="folder2.png" alt="">
                         <span>Fazcade</span>
                     </div>
-                    <div class="app-icon" onclick="loadMinigame('parts_service_area')">
+                    <div class="folder-icon" onclick="loadFolder('backstage_folder')">
                         <img src="folder2.png" alt="">
                         <span>Backstage</span></span>
                     </div>
-                    <div class="app-icon" onclick="loadMinigame('vent_repair_area')">
+                    <div class="folder-icon" onclick="loadMinigame('staff_only_folder')">
                         <img src="folder3.png" alt="">
                         <span>Staff Only</span>
                     </div>
-                    <div class="app-icon" onclick="loadMinigame('night_terrors_area')">
+                    <div class="folder-icon" onclick="loadMinigame('sister_location_area')">
                         <img src="folder5.png" alt="">
                         <span>Sister Location</span>
                     </div>
@@ -188,18 +198,37 @@
         <button class="back-button" onclick="showHomeScreen()">Back to Home</button>
     </div>
 
-    <div id="arcade_folder" class="folder-content">
+    <div id="fazcade_folder" class="folder-content">
         <h2>Fazcade</h2>
         <div class="icon-grid">
-            <div class="minigame-icon" onclick="loadMinigame('balloon_circus_area')">
-                <img src="minigame2.png" alt="Balloon Circus">
-                <span></span>
+            <div class="minigame-icon" onclick="loadMinigame('fazerblast_area')">
+                <img src="minigame2.png" alt="Fazerblast">
+                <span>Fazerblast</span>
             </div>
         </div>
         <button class="back-button" onclick="showHomeScreen()">--->Back<---</button>
     </div>
-
-    <div id="parts_service_area" class="minigame-area">
+<div id="backstage_folder" class="folder-content">
+        <h2>Backstage</h2>
+        <div class="icon-grid">
+            <div class="minigame-icon" onclick="loadMinigame('backstage_area')">
+                <img src="minigame3.png" alt="Arts And Crafts">
+                <span>Arts And Crafts</span>
+            </div>
+        </div>
+        <button class="back-button" onclick="showHomeScreen()">--->Back<---</button>
+    </div>
+    <div id="staff_only_folder" class="folder-content">
+        <h2>Staff Only</h2>
+        <div class="icon-grid">
+            <div class="minigame-icon" onclick="loadMinigame('staff_only_area')">
+                <img src="minigame4.png" alt="Roxy Makeup">
+                <span>Roxy Makeup</span>
+            </div>
+        </div>
+        <button class="back-button" onclick="showHomeScreen()">--->Back<---</button>
+    </div>
+    <div id="backstage_area" class="minigame-area">
         <h2>Backstage</h2>
         <p></p>
         <button class="back-button" onclick="showHomeScreen()">--->Back<---</button>
