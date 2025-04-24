@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: sans-serif;
-            background-color: #222;
+            background-color: #eee;
             color: #eee;
             display: flex;
             flex-direction: column;
@@ -18,7 +18,7 @@
         }
 
         .menu-container {
-            background-color: #333;
+            background-color: #008B8B;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
@@ -85,7 +85,7 @@
         .app-icon span, .folder-icon span, .minigame-icon span {
             display: block;
             padding: 8px; /* Slightly less padding */
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: #40E0D0;
             color: #eee;
             text-align: center;
             font-size: 0.85em; /* Slightly smaller font */
@@ -124,7 +124,8 @@
         }
 
         .back-button {
-            width:15px;
+            width: 75px;
+            height:25px;
             cursor: pointer;
             padding: 8px 16px; /* Smaller padding */
             background-color: #D3D3D3;
@@ -151,7 +152,9 @@
                 <div class="icon-grid">
                     <div class="folder-icon" onclick="openFolder('food_prep_folder')">
                         <img src="folder1.png" alt="Food Prep">
+                        <div>
                         <span>Food Prep</span>
+                        </div>
                     </div>
                     <div class="folder-icon" onclick="openFolder('arcade_folder')">
                         <img src="path/to/arcade_folder_icon.png" alt="Arcade">
