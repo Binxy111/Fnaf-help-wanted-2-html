@@ -68,7 +68,12 @@
             gap: 15px; /* Smaller gap */
             margin-top: 15px; /* Smaller margin */
         }
-
+        .minigame-icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Slightly smaller icons */
+            gap: 15px; /* Smaller gap */
+            margin-top: 15px; /* Smaller margin */
+        }
         .app-icon, .folder-icon, .minigame-icon {
             cursor: pointer;
             border: 2px solid #555;
@@ -85,7 +90,7 @@
         }
 
         .app-icon img, .folder-icon img, .minigame-icon img {
-            width: 100%;
+            width: ;
             display: block;
         }
 
@@ -107,9 +112,6 @@
             width: 80%;
             max-width: 600px;
             text-align: center;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Slightly smaller icons */
-            gap: 15px; /* Smaller gap */
-            margin-top: 15px; /* Smaller margin */
         }
 
         .folder-content h2 {
@@ -135,7 +137,7 @@
 
         .back-button {
             width: 125px;
-            height:25px;
+            height:30px;
             cursor: pointer;
             padding: 8px 16px; /* Smaller padding */
             background-color: #D3D3D3;
@@ -186,6 +188,8 @@
             </div>
         </div>
     </div>
+<div class="minigame-icon-grid">
+    
 
     <div id="food_prep_folder" class="folder-content">
         <h2>Food Prep</h2>
@@ -227,6 +231,7 @@
             </div>
         </div>
         <button class="back-button" onclick="showHomeScreen()">--->Back<---</button>
+    </div>
     </div>
     <div id="backstage_area" class="minigame-area">
         <h2>Backstage</h2>
