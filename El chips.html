@@ -1,0 +1,312 @@
+ <!DOCTYPE html>
+<html>
+<head>
+<title>Help Wanted 2 - El Chip's Order Taking</title>
+<style>
+  body {
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+    margin: 0;
+  }
+
+  .game-container {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+
+  .customer {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px;
+    border-radius: 5px;
+    display: inline-block;
+    vertical-align: top;
+  }
+
+  .order {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .counter {
+    margin-top: 20px;
+    border: 2px dashed #bbb;
+    padding: 15px;
+    border-radius: 5px;
+  }
+
+  .item-button {
+    padding: 8px 15px;
+    margin: 5px;
+    cursor: pointer;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+  }
+
+  .sauce-gun {
+    margin-top: 10px;
+  }
+
+  .sauce-button {
+    padding: 5px 10px;
+    margin: 2px;
+    cursor: pointer;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+  }
+
+  .food-prep {
+    margin-top: 10px;
+  }
+
+  .number-pad {
+    margin-top: 10px;
+  }
+
+  .number-button {
+    padding: 5px 10px;
+    margin: 2px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+  }
+
+  #message {
+    margin-top: 15px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>El Chip's Order Taking</h1>
+    <div id="customers">
+      </div>
+    <div class="counter">
+      <h2>Your Counter</h2>
+      <div id="prepared-order"></div>
+    </div>
+    <div class="controls">
+      <h3>Drinks</h3>
+      <div id="drinks">
+        <button class="item-button" onclick="prepareDrink('Pink Lemonade')">Pink Lemonade</button>
+        <button class="item-button" onclick="prepareDrink('Soda Flan')">Soda Flan</button>
+      </div>
+      <div class="sauce-gun">
+        <h3>Sauces</h3>
+        <button class="sauce-button" onclick="addSauce('Nacho Cheese')">Nacho Cheese</button>
+        <button class="sauce-button" onclick="addSauce('Guacamole')">Guacamole</button>
+      </div>
+      <div class="food-prep">
+        <h3>Food Prep</h3>
+        <button class="item-button" onclick="startFood('Monty\'s Fiesta Pizza')">Monty's Fiesta Pizza</button>
+        <button class="item-button" onclick="startFood('Glam Wrap')">Glam Wrap</button>
+        <button class="item-button" onclick="startFood('Faztato')">Faztato</button>
+        <button class="item-button" onclick="startFood('Roxy\'s Rockin Nachos')">Roxy's Rockin Nachos</button>
+        <div id="food-input" style="display:none;">
+          Enter Lid Numbers: <span id="current-food"></span>
+          <div class="number-pad">
+            <button class="number-button" onclick="addNumber(1)">1</button>
+            <button class="number-button" onclick="addNumber(2)">2</button>
+            <button class="number-button" onclick="addNumber(3)">3</button>
+            <button class="number-button" onclick="submitFood()">Cook & Add</button>
+          </div>
+          <div id="food-numbers"></div>
+        </div>
+      </div>
+      <button onclick="serveOrder()">Serve Order</button>
+    </div>
+    <div id="message"></div>
+    <script>
+      let customers = [];
+      let currentOrder = {};
+      let score = 0;
+      let failedOrders = 0;
+      const maxFailedOrders = 3;
+      let gameActive = true;
+      let foodInProgress = null;
+      let foodNumbers = "";
+
+      const possibleDrinks = ["Pink Lemonade", "Soda Flan"];
+      const possibleSauces = ["Nacho Cheese", "Guacamole"];
+      const possibleFoods = ["Monty's Fiesta Pizza", "Glam Wrap", "Faztato", "Roxy's Rockin Nachos"];
+
+      function createCustomer() {
+        if (!gameActive) return;
+        const customerDiv = document.createElement('div');
+        customerDiv.classList.add('customer');
+        const order = {};
+        let orderText = "";
+
+        if (Math.random() < 0.5) { // Order a drink
+          order.drink = possibleDrinks[Math.floor(Math.random() * possibleDrinks.length)];
+          orderText += `Drink: ${order.drink}`;
+          if (Math.random() < 0.3) { // Add a sauce to the drink
+            order.sauce = possibleSauces[Math.floor(Math.random() * possibleSauces.length)];
+            orderText += ` with ${order.sauce}`;
+          }
+        } else { // Order food
+          order.food = possibleFoods[Math.floor(Math.random() * possibleFoods.length)];
+          order.lidNumbers = generateRandomNumbers(3);
+          orderText += `Food: ${order.food} (Lid: ${order.lidNumbers.join('')})`;
+        }
+
+        const orderElement = document.createElement('div');
+        orderElement.classList.add('order');
+        orderElement.textContent = orderText;
+        customerDiv.appendChild(orderElement);
+        customerDiv.dataset.order = JSON.stringify(order);
+        document.getElementById('customers').appendChild(customerDiv);
+        customers.push({ element: customerDiv, order });
+
+        if (customers.length < 3 && gameActive) {
+          setTimeout(createCustomer, Math.random() * 3000 + 2000); // Create next customer with a delay
+        }
+      }
+
+      function generateRandomNumbers(count) {
+        const numbers = [];
+        for (let i = 0; i < count; i++) {
+          numbers.push(Math.floor(Math.random() * 10));
+        }
+        return numbers;
+      }
+
+      function prepareDrink(drink) {
+        if (!currentOrder.drink) {
+          currentOrder.drink = drink;
+          updatePreparedOrderDisplay();
+        }
+      }
+
+      function addSauce(sauce) {
+        if (currentOrder.drink && !currentOrder.sauce) {
+          currentOrder.sauce = sauce;
+          updatePreparedOrderDisplay();
+        }
+      }
+
+      function startFood(food) {
+        foodInProgress = food;
+        document.getElementById('current-food').textContent = food;
+        document.getElementById('food-input').style.display = 'block';
+        foodNumbers = "";
+        document.getElementById('food-numbers').textContent = "";
+      }
+
+      function addNumber(number) {
+        if (foodInProgress && foodNumbers.length < 3) {
+          foodNumbers += number;
+          document.getElementById('food-numbers').textContent = foodNumbers;
+          if (foodNumbers.length === 3) {
+            currentOrder.food = foodInProgress;
+            currentOrder.lidNumbers = foodNumbers.split('').map(Number);
+            foodInProgress = null;
+            foodNumbers = "";
+            document.getElementById('food-input').style.display = 'none';
+            updatePreparedOrderDisplay();
+          }
+        }
+      }
+
+      function submitFood() {
+        // This function is now handled by addNumber when the third number is entered.
+      }
+
+      function updatePreparedOrderDisplay() {
+        let display = "";
+        if (currentOrder.drink) {
+          display += `Drink: ${currentOrder.drink}`;
+          if (currentOrder.sauce) {
+            display += ` with ${currentOrder.sauce}`;
+          }
+        }
+        if (currentOrder.food) {
+          display += `<br>Food: ${currentOrder.food} (Lid: ${currentOrder.lidNumbers.join('')})`;
+        }
+        document.getElementById('prepared-order').innerHTML = display;
+      }
+
+      function serveOrder() {
+        if (Object.keys(currentOrder).length === 0) {
+          setMessage("No order prepared!");
+          return;
+        }
+
+        const firstCustomer = document.querySelector('#customers .customer');
+        if (!firstCustomer) {
+          setMessage("No customers waiting!");
+          return;
+        }
+
+        const expectedOrder = JSON.parse(firstCustomer.dataset.order);
+        let orderCorrect = true;
+
+        if (expectedOrder.drink) {
+          if (currentOrder.drink !== expectedOrder.drink || currentOrder.sauce !== expectedOrder.sauce) {
+            orderCorrect = false;
+          }
+        } else if (expectedOrder.food) {
+          if (currentOrder.food !== expectedOrder.food || (currentOrder.lidNumbers && !arraysEqual(currentOrder.lidNumbers, expectedOrder.lidNumbers))) {
+            orderCorrect = false;
+          }
+        } else {
+          orderCorrect = false; // Should not happen
+        }
+
+        document.getElementById('customers').removeChild(firstCustomer);
+        customers.shift();
+        currentOrder = {};
+        document.getElementById('prepared-order').textContent = "";
+
+        if (orderCorrect) {
+          score++;
+          setMessage("Order served correctly! Score: " + score);
+        } else {
+          failedOrders++;
+          setMessage("Incorrect order! Failed: " + failedOrders + "/" + maxFailedOrders);
+          if (failedOrders >= maxFailedOrders) {
+            gameOver();
+          }
+        }
+
+        if (customers.length < 3 && gameActive) {
+          setTimeout(createCustomer, Math.random() * 3000 + 2000);
+        }
+      }
+
+      function arraysEqual(a, b) {
+        if (a === b) return true;
+        if (a == null || b == null) return false;
+        if (a.length !== b.length) return false;
+        for (let i = 0; i < a.length; ++i) {
+          if (a[i] !== b[i]) return false;
+        }
+        return true;
+      }
+
+      function setMessage(msg) {
+        document.getElementById('message').textContent = msg;
+      }
+
+      function gameOver() {
+        gameActive = false;
+        setMessage("Game Over! Final Score: " + score);
+      }
+
+      // Start the game
+      for (let i = 0; i < 2; i++) {
+        setTimeout(createCustomer, Math.random() * 2000 + 1000 * i);
+      }
+    </script>
+  </div>
+</body>
+</html>
