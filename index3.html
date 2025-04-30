@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FNAF: Twisted Bonnie</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.139.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.139.0/examples/js/loaders/GLTFLoader.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+            font-family: 'Creepster', cursive; /* Added Creepster font */
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: pointer; /* Change cursor for interaction */
+        }
+
+        #instructionsCanvas {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #ffc107; /* Yellow text for instructions */
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 1.4em; /* Increased font size */
+            text-align: center;
+            z-index: 1;
+            border: 2px solid #ffc107;
+            box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+            pointer-events: none;  /* Important: Allows clicks to go through to the scene */
+        }
+
+        #gameOverOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none; /* Initially hidden */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+
+        #gameOverOverlay h2 {
+            font-size: 3em;
+            color: #dc3545; /* Red for game over */
+            margin-bottom: 20px;
+        }
+
+        #gameOverOverlay p {
+            font-size: 1.5em;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+
+        #gameOverOverlay button {
+            background-color: #dc3545;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: background-color 0.3s ease;
+            font-family: 'Creepster', cursive;
+        }
+
+        #gameOverOverlay button:hover {
+            background-color: #c82333;
+        }
+
+        #successOverlay { /* Added success overlay */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+
+        #successOverlay h2 {
+            font-size: 3em;
+            color: #28a745; /* Green for success */
+            margin-bottom: 20px;
+        }
+
+        #successOverlay p {
+            font-size: 1.5em;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+
+        #successOverlay button {
+            background-color: #28a745;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: background-color 0.3s ease;
+            font-family: 'Creepster', cursive;
+        }
+
+        #successOverlay button:hover {
+            background-color: #218838;
+        }
+
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <canvas id="instructionsCanvas"></canvas>
+    <div id="gameOverOverlay">
+        <h2>Game Over</h2>
+        <p id="gameOverText">Bonnie caught you!</p>
+        <button id="restartButton">Restart</button>
+    </div>
+    <div id="successOverlay">
+        <h2>Success</h2>
+        <p>You repaired Bonnie!</p>
+        <button id="restartSuccessButton">Restart</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const gltfLoader = new THREE.GLTFLoader();
+
+        const instructionsCanvas = document.getElementById('instructionsCanvas');
+        const instructionsContext = instructionsCanvas.getContext('2d');
+        instructionsCanvas.width = 600;
+        instructionsCanvas.height = 100;
+
+        let room;
+        let bonnie;
+        let light;
+        let mixer;
+        let clock = new THREE.Clock();
+
+        let currentTaskIndex = 0;
+        let instructions = [
+            "1. Check Power Systems",
+            "2. Stabilize Head Servo",
+            "3. Engage Limb Restraints",
+            "4. Initiate Diagnostic Scan",
+            "5. Final Calibration" // Added a 5th step
+        ];
+        let bonnieState = "idle"; // "idle", "twitching", "attacking", "repaired"
+        let taskCompleted = [false, false, false, false, false]; // Track completion of each task, added a 5th
+        let interactionEnabled = true;
+        let gameOver = false;
+        let gameWon = false; // Added win state
+        let jumpScareTimeout;
+        let ambientSound, attackSound; // Sound variables
+        let audioListener;
+
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const gameOverText = document.getElementById('gameOverText');
+        const restartButton = document.getElementById('restartButton');
+        const successOverlay = document.getElementById('successOverlay'); // Get success overlay
+        const restartSuccessButton = document.getElementById('restartSuccessButton'); // Get restart button in success overlay
+
+
+        function init() {
+
+            // Set up camera
+            camera.position.set(0, 1.5, 5);
+            camera.lookAt(0, 1, 0);
+
+            // Add ambient light
+            const ambientLight = new THREE.HemisphereLight(0xffffff, 0x404040, 0.7); // Sky color, ground color, intensity
+            scene.add(ambientLight);
+
+            // Add a point light for flickering effect
+            light = new THREE.PointLight(0xffa500, 1, 10);
+            light.position.set(0, 2, 0);
+            scene.add(light);
+
+            loadRoom();
+            loadBonnie();
+            setupAudio();
+            resizeCanvas();
+            render();
+        }
+
+        function loadRoom() {
+            gltfLoader.load('pizzeria.fbx', function (fbx) { // Changed path
+                room = fbx.scene;
+                scene.add(room);
+            }, undefined, function (error) {
+                console.error(error);
+            });
+        }
+
+        function loadBonnie() {
+            gltfLoader.load('./models/bonnie.glb', function (gltf) { // Changed path
+                bonnie = gltf.scene;
+                bonnie.scale.set(0.7, 0.7, 0.7);
+                bonnie.position.set(0, 0, 0);
+                scene.add(bonnie);
+
+                // Set up animation mixer
+                mixer = new THREE.AnimationMixer(bonnie);
+                // Play a twitching animation (assuming you have one in your model)
+                const twitchClip = gltf.animations.find(clip => clip.name === "twitch"); //  Make sure the name matches your model
+                if (twitchClip) {
+                    const action = mixer.clipAction(twitchClip);
+                    action.play();
+                } else {
+                    console.warn("No 'twitch' animation found for Bonnie.");
+                }
+
+
+            }, undefined, function (error) {
+                console.error(error);
+            });
+        }
+
+        function setupAudio() {
+            audioListener = new THREE.AudioListener();
+            camera.add(audioListener);
+
+            // Create ambient sound
+            ambientSound = new THREE.Audio(audioListener);
+            const audioLoader = new THREE.AudioLoader();
+            audioLoader.load('./sounds/ambient.mp3', function (buffer) { // Changed path
+                ambientSound.setBuffer(buffer);
+                ambientSound.setLoop(true);
+                ambientSound.setVolume(0.5);
+                ambientSound.play();
+            });
+
+            // Create attack sound
+            attackSound = new THREE.Audio(audioListener);
+            audioLoader.load('./sounds/jumpscare.mp3', function (buffer) { // Changed path
+                attackSound.setBuffer(buffer);
+                attackSound.setVolume(1);
+            });
+        }
+
+        function resizeCanvas() {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            instructionsCanvas.width = window.innerWidth * 0.6; // Adjust size as needed
+            instructionsCanvas.height = 100; // Fixed height
+        }
+
+        function drawInstructions() {
+            instructionsContext.clearRect(0, 0, instructionsCanvas.width, instructionsCanvas.height);
+            instructionsContext.font = 'bold 24px "Creepster"'; // Increased font size, same as CSS
+            instructionsContext.fillStyle = '#ffc107'; // Yellow color
+            instructionsContext.textAlign = 'center';
+            instructionsContext.textBaseline = 'middle';
+
+            let instructionText = instructions[currentTaskIndex];
+             if (gameWon) {
+                instructionText = "Bonnie Repaired!";
+            } else if (gameOver) {
+                instructionText = "Game Over!";
+            }
+
+            instructionsContext.fillText(instructionText, instructionsCanvas.width / 2, instructionsCanvas.height / 2);
+        }
+
+        function handleInteraction(event) {
+            if (!bonnie || !interactionEnabled || gameOver || gameWon) return;
+
+            const mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(bonnie.children, true); // Recursive check
+
+            if (intersects.length > 0) {
+                const intersectedObject = intersects[0].object;
+                console.log("Clicked on:", intersectedObject.name); // Debugging
+
+                // Example interaction checks (adjust based on your model's names)
+                if (intersectedObject.name === 'PowerSystems' && currentTaskIndex === 0 && !taskCompleted[0]) {
+                    console.log("Power Systems Checked");
+                    taskCompleted[0] = true;
+                    currentTaskIndex++;
+                    updateTask();
+                } else if (intersectedObject.name === 'HeadServo' && currentTaskIndex === 1 && !taskCompleted[1]) {
+                    console.log("Head Servo Stabilized");
+                    taskCompleted[1] = true;
+                    currentTaskIndex++;
+                    updateTask();
+                } else if (intersectedObject.name === 'LimbRestraints' && currentTaskIndex === 2 && !taskCompleted[2]) {
+                    console.log("Limb Restraints Engaged");
+                    taskCompleted[2] = true;
+                    currentTaskIndex++;
+                    updateTask();
+                } else if (intersectedObject.name === 'DiagnosticScanner' && currentTaskIndex === 3 && !taskCompleted[3]) {
+                    console.log("Diagnostic Scan Initiated");
+                    taskCompleted[3] = true;
+                    currentTaskIndex++;
+                    updateTask();
+                }
+                 else if (intersectedObject.name === 'FinalCalibration' && currentTaskIndex === 4 && !taskCompleted[4]) { // added final calibration
+                    console.log("Final Calibration Initiated");
+                    taskCompleted[4] = true;
+                    currentTaskIndex = 4; // Keep at 4, so it does not go beyond array
+                    updateTask();
+                    completeRepair(); // Call function for completing
+                }
+                else {
+                    // Handle incorrect interaction (e.g., Bonnie attacks)
+                    bonnieAttack();
+                }
+            }
+        }
+
+        function updateTask() {
+            if (currentTaskIndex >= instructions.length) {
+                completeRepair();
+            }
+            drawInstructions();
+        }
+
+        function bonnieAttack() {
+            if (gameOver || gameWon) return;
+
+            bonnieState = "attacking";
+            interactionEnabled = false;
+            // Play attack sound
+            if (attackSound) {
+                attackSound.stop();
+                attackSound.play();
+            }
+
+            // Trigger jump scare animation (assuming you have one)
+            const attackClip = bonnie.animations.find(clip => clip.name === "jumpscare"); //  Make sure the name matches your model
+                if (attackClip) {
+                    const action = mixer.clipAction(attackClip);
+                    action.reset();
+                    action.play();
+                } else {
+                    console.warn("No 'jumpscare' animation found for Bonnie.");
+                }
+            // Show Game Over screen after delay
+            jumpScareTimeout = setTimeout(() => {
+                gameOver = true;
+                drawInstructions();
+                showGameOverScreen();
+            }, 1000); // Adjust delay as needed
+        }
+
+        function completeRepair() {
+            if (gameOver || gameWon) return;
+            bonnieState = "repaired";
+            interactionEnabled = false;
+            gameWon = true; // Set win flag
+             if (ambientSound) {
+                ambientSound.stop();
+            }
+            drawInstructions();
+            showSuccessScreen(); // Show success screen
+        }
+
+        function showGameOverScreen() {
+            gameOverOverlay.style.display = 'flex';
+            if (attackSound) {
+                attackSound.stop();
+            }
+
+        }
+        function showSuccessScreen() { // Function to show success screen
+            successOverlay.style.display = 'flex';
+             if (ambientSound) {
+                ambientSound.stop();
+            }
+        }
+
+        function resetGame() {
+            gameOver = false;
+            gameWon = false; // Reset win flag
+            gameOverOverlay.style.display = 'none';
+            successOverlay.style.display = 'none'; // Hide success screen
+            currentTaskIndex = 0;
+            taskCompleted = [false, false, false, false, false]; // Reset task completion, added 5th
+            interactionEnabled = true;
+            bonnieState = "idle";
+
+            // Reset Bonnie's position and animation
+            if (bonnie) {
+                bonnie.position.set(0, 0, 0);
+                if (mixer) {
+                   mixer.stopAllAction();
+                    const twitchClip = bonnie.animations.find(clip => clip.name === "twitch"); //  Make sure the name matches your model
+                    if (twitchClip) {
+                        const action = mixer.clipAction(twitchClip);
+                        action.play();
+                    }
+                }
+            }
+             if (ambientSound) {
+                ambientSound.play();
+            }
+
+            // Clear any timeouts
+            if (jumpScareTimeout) {
+                clearTimeout(jumpScareTimeout);
+            }
+            init(); //restart
+        }
+
+
+        function render() {
+            requestAnimationFrame(render);
+
+            if (mixer) {
+                mixer.update(clock.getDelta());
+            }
+
+            // Flicker light
+            if (light) {
+                light.intensity = Math.random() * 0.5 + 0.5; // Flicker between 0.5 and 1
+            }
+
+            drawInstructions();
+            renderer.render(scene, camera);
+        }
+
+        // Event listeners
+        window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('mousedown', handleInteraction);
+        restartButton.addEventListener('click', resetGame);
+        restartSuccessButton.addEventListener('click', resetGame); // Restart button for success screen
+
+
+        init(); // Start the game
+
+
+    </script>
+</body>
+</html>
