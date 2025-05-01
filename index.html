@@ -3,466 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FNAF: Help Wanted 2</title>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.139.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.139.0/examples/js/loaders/GLTFLoader.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+    <title>AR Glasses OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            margin: 0;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #000;
-            font-family: 'Creepster', cursive; /* Added Creepster font */
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.1); /* Glassmorphism effect - more subtle */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2); /* тонкая граница */
+            border-radius: 1rem; /* Increased rounded corners */
+            padding: 1.5rem; /* Slightly increased padding */
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25); /* More pronounced shadow */
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Added shadow transition */
         }
 
-        #gameCanvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-            cursor: pointer; /* Change cursor for interaction */
+        .glass-panel:hover {
+            transform: translateY(-4px) scale(1.02); /* Slight lift on hover */
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3); /* Increased shadow on hover */
         }
 
-        #instructionsCanvas {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #ffc107; /* Yellow text for instructions */
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 1.4em; /* Increased font size */
-            text-align: center;
-            z-index: 1;
-            border: 2px solid #ffc107;
-            box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
-            pointer-events: none;  /* Important: Allows clicks to go through to the scene */
-        }
-
-        #gameOverOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-            display: none; /* Initially hidden */
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 2;
-        }
-
-        #gameOverOverlay h2 {
-            font-size: 3em;
-            color: #dc3545; /* Red for game over */
-            margin-bottom: 20px;
-        }
-
-        #gameOverOverlay p {
-            font-size: 1.5em;
+        .holographic-text {
             color: #fff;
-            margin-bottom: 30px;
+            text-shadow: 0 0 8px rgba(100, 255, 255, 0.8); /* яркое свечение */
+            animation: pulse 2s infinite alternate;
+        }
+        @keyframes pulse {
+          from { text-shadow: 0 0 8px rgba(100, 255, 255, 0.8); }
+          to { text-shadow: 0 0 16px rgba(100, 255, 255, 0.5); }
         }
 
-        #gameOverOverlay button {
-            background-color: #dc3545;
+        .icon {
+            width: 2rem; /* Increased icon size */
+            height: 2rem;
+            margin-right: 1rem;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3)); /* Added drop shadow to icons */
+        }
+
+         .app-icon {
+            width: 4rem; /* Increased icon size */
+            height: 4rem;
+            margin-bottom: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .app-icon:hover {
+             transform: translateY(-4px) scale(1.1);
+        }
+
+        .notification {
+            background-color: rgba(50, 200, 255, 0.9); /* Semi-transparent blue */
             color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1.2em;
-            transition: background-color 0.3s ease;
-            font-family: 'Creepster', cursive;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.5s ease-out, fadeOut 5s 2s forwards; /* Slide in, then fade out after 2s delay */
+            position: relative; /* Needed for absolute positioning of close button */
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
         }
 
-        #gameOverOverlay button:hover {
-            background-color: #c82333;
-        }
-
-        #successOverlay { /* Added success overlay */
+        .notification-close {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 2;
-        }
-
-        #successOverlay h2 {
-            font-size: 3em;
-            color: #28a745; /* Green for success */
-            margin-bottom: 20px;
-        }
-
-        #successOverlay p {
-            font-size: 1.5em;
-            color: #fff;
-            margin-bottom: 30px;
-        }
-
-        #successOverlay button {
-            background-color: #28a745;
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 5px;
+            top: 0.5rem;
+            right: 0.5rem;
             cursor: pointer;
-            font-size: 1.2em;
-            transition: background-color 0.3s ease;
-            font-family: 'Creepster', cursive;
+            font-size: 1.2rem;
+            color: white;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
         }
-
-        #successOverlay button:hover {
-            background-color: #218838;
+        .notification-close:hover {
+            opacity: 1;
         }
 
     </style>
 </head>
-<body>
-    <canvas id="gameCanvas"></canvas>
-    <canvas id="instructionsCanvas"></canvas>
-    <div id="gameOverOverlay">
-        <h2>Game Over</h2>
-        <p id="gameOverText">Bonnie caught you!</p>
-        <button id="restartButton">Restart</button>
-    </div>
-    <div id="successOverlay">
-        <h2>Success</h2>
-        <p>You repaired Bonnie!</p>
-        <button id="restartSuccessButton">Restart</button>
+<body class="bg-gradient-to-br from-gray-900 to-black min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-3xl text-center">
+        <h1 class="holographic-text text-3xl font-semibold mb-6">Welcome to AR Glasses OS</h1>
+
+        <div class="flex justify-between items-center mb-4">
+            <span class="text-white text-opacity-80">12:34 PM</span>
+            <div class="flex items-center">
+                <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/battery-charging.svg" alt="Battery" class="icon">
+                <span class="text-white text-opacity-80">95%</span>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-white mb-4">Featured Apps</h2>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="flex flex-col items-center">
+                    <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/message-square.svg" alt="Messages" class="app-icon">
+                    <span class="text-white text-sm">Messages</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/map-pin.svg" alt="Maps" class="app-icon">
+                    <span class="text-white text-sm">Maps</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/music.svg" alt="Music" class="app-icon">
+                    <span class="text-white text-sm">Music</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/camera.svg" alt="Camera" class="app-icon">
+                    <span class="text-white text-sm">Camera</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/settings.svg" alt="Settings" class="app-icon">
+                    <span class="text-white text-sm">Settings</span>
+                </div>
+                 <div class="flex flex-col items-center">
+                    <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/shopping-cart.svg" alt="Shop" class="app-icon">
+                    <span class="text-white text-sm">Shop</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="notifications-container" class="w-full">
+             </div>
+
+        <div class="mb-4">
+            <input type="text" placeholder="Say a command..." class="w-full px-4 py-2 rounded-full bg-black bg-opacity-20 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+            <button class="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-full px-6 py-3 transition duration-300 ease-in-out">
+                <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/zap.svg" alt="Quick Action" class="icon inline-block mr-2">
+                Quick Action
+            </button>
+        </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const gltfLoader = new THREE.GLTFLoader();
+        // Function to add a notification
+        function addNotification(message) {
+            const container = document.getElementById('notifications-container');
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
 
-        const instructionsCanvas = document.getElementById('instructionsCanvas');
-        const instructionsContext = instructionsCanvas.getContext('2d');
-        instructionsCanvas.width = 600;
-        instructionsCanvas.height = 100;
+            // Add close button
+            const closeButton = document.createElement('span');
+            closeButton.className = 'notification-close';
+            closeButton.innerHTML = '&times;'; // X icon
+            closeButton.onclick = function() {
+                notification.remove();
+            };
+            notification.appendChild(closeButton);
 
-        let room;
-        let bonnie;
-        let light;
-        let mixer;
-        let clock = new THREE.Clock();
-
-        let currentTaskIndex = 0;
-        let instructions = [
-            "1. Check Power Systems",
-            "2. Stabilize Head Servo",
-            "3. Engage Limb Restraints",
-            "4. Initiate Diagnostic Scan",
-            "5. Final Calibration" // Added a 5th step
-        ];
-        let bonnieState = "idle"; // "idle", "twitching", "attacking", "repaired"
-        let taskCompleted = [false, false, false, false, false]; // Track completion of each task, added a 5th
-        let interactionEnabled = true;
-        let gameOver = false;
-        let gameWon = false; // Added win state
-        let jumpScareTimeout;
-        let ambientSound, attackSound; // Sound variables
-        let audioListener;
-
-        const gameOverOverlay = document.getElementById('gameOverOverlay');
-        const gameOverText = document.getElementById('gameOverText');
-        const restartButton = document.getElementById('restartButton');
-        const successOverlay = document.getElementById('successOverlay'); // Get success overlay
-        const restartSuccessButton = document.getElementById('restartSuccessButton'); // Get restart button in success overlay
-
-
-        function init() {
-
-            // Set up camera
-            camera.position.set(0, 1.5, 5);
-            camera.lookAt(0, 1, 0);
-
-            // Add ambient light
-            const ambientLight = new THREE.HemisphereLight(0xffffff, 0x404040, 0.7); // Sky color, ground color, intensity
-            scene.add(ambientLight);
-
-            // Add a point light for flickering effect
-            light = new THREE.PointLight(0xffa500, 1, 10);
-            light.position.set(0, 2, 0);
-            scene.add(light);
-
-            loadRoom();
-            loadBonnie();
-            setupAudio();
-            resizeCanvas();
-            render();
+            container.appendChild(notification);
         }
 
-        function loadRoom() {
-            gltfLoader.load('pizzeria.fbx', function (fbx) { // Changed path
-                room = fbx.scene;
-                scene.add(room);
-            }, undefined, function (error) {
-                console.error(error);
-            });
-        }
+        // Simulate incoming notifications (for demonstration purposes)
+        setTimeout(() => {
+            addNotification('New message from John!');
+        }, 1000);
 
-        function loadBonnie() {
-            gltfLoader.load('./models/bonnie.glb', function (gltf) { // Changed path
-                bonnie = gltf.scene;
-                bonnie.scale.set(0.7, 0.7, 0.7);
-                bonnie.position.set(0, 0, 0);
-                scene.add(bonnie);
+        setTimeout(() => {
+            addNotification('Reminder: Meeting at 3 PM');
+        }, 3000);
 
-                // Set up animation mixer
-                mixer = new THREE.AnimationMixer(bonnie);
-                // Play a twitching animation (assuming you have one in your model)
-                const twitchClip = gltf.animations.find(clip => clip.name === "twitch"); //  Make sure the name matches your model
-                if (twitchClip) {
-                    const action = mixer.clipAction(twitchClip);
-                    action.play();
-                } else {
-                    console.warn("No 'twitch' animation found for Bonnie.");
-                }
-
-
-            }, undefined, function (error) {
-                console.error(error);
-            });
-        }
-
-        function setupAudio() {
-            audioListener = new THREE.AudioListener();
-            camera.add(audioListener);
-
-            // Create ambient sound
-            ambientSound = new THREE.Audio(audioListener);
-            const audioLoader = new THREE.AudioLoader();
-            audioLoader.load('./sounds/ambient.mp3', function (buffer) { // Changed path
-                ambientSound.setBuffer(buffer);
-                ambientSound.setLoop(true);
-                ambientSound.setVolume(0.5);
-                ambientSound.play();
-            });
-
-            // Create attack sound
-            attackSound = new THREE.Audio(audioListener);
-            audioLoader.load('./sounds/jumpscare.mp3', function (buffer) { // Changed path
-                attackSound.setBuffer(buffer);
-                attackSound.setVolume(1);
-            });
-        }
-
-        function resizeCanvas() {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-
-            instructionsCanvas.width = window.innerWidth * 0.6; // Adjust size as needed
-            instructionsCanvas.height = 100; // Fixed height
-        }
-
-        function drawInstructions() {
-            instructionsContext.clearRect(0, 0, instructionsCanvas.width, instructionsCanvas.height);
-            instructionsContext.font = 'bold 24px "Creepster"'; // Increased font size, same as CSS
-            instructionsContext.fillStyle = '#ffc107'; // Yellow color
-            instructionsContext.textAlign = 'center';
-            instructionsContext.textBaseline = 'middle';
-
-            let instructionText = instructions[currentTaskIndex];
-             if (gameWon) {
-                instructionText = "Bonnie Repaired!";
-            } else if (gameOver) {
-                instructionText = "Game Over!";
-            }
-
-            instructionsContext.fillText(instructionText, instructionsCanvas.width / 2, instructionsCanvas.height / 2);
-        }
-
-        function handleInteraction(event) {
-            if (!bonnie || !interactionEnabled || gameOver || gameWon) return;
-
-            const mouse = new THREE.Vector2();
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(mouse, camera);
-
-            const intersects = raycaster.intersectObjects(bonnie.children, true); // Recursive check
-
-            if (intersects.length > 0) {
-                const intersectedObject = intersects[0].object;
-                console.log("Clicked on:", intersectedObject.name); // Debugging
-
-                // Example interaction checks (adjust based on your model's names)
-                if (intersectedObject.name === 'PowerSystems' && currentTaskIndex === 0 && !taskCompleted[0]) {
-                    console.log("Power Systems Checked");
-                    taskCompleted[0] = true;
-                    currentTaskIndex++;
-                    updateTask();
-                } else if (intersectedObject.name === 'HeadServo' && currentTaskIndex === 1 && !taskCompleted[1]) {
-                    console.log("Head Servo Stabilized");
-                    taskCompleted[1] = true;
-                    currentTaskIndex++;
-                    updateTask();
-                } else if (intersectedObject.name === 'LimbRestraints' && currentTaskIndex === 2 && !taskCompleted[2]) {
-                    console.log("Limb Restraints Engaged");
-                    taskCompleted[2] = true;
-                    currentTaskIndex++;
-                    updateTask();
-                } else if (intersectedObject.name === 'DiagnosticScanner' && currentTaskIndex === 3 && !taskCompleted[3]) {
-                    console.log("Diagnostic Scan Initiated");
-                    taskCompleted[3] = true;
-                    currentTaskIndex++;
-                    updateTask();
-                }
-                 else if (intersectedObject.name === 'FinalCalibration' && currentTaskIndex === 4 && !taskCompleted[4]) { // added final calibration
-                    console.log("Final Calibration Initiated");
-                    taskCompleted[4] = true;
-                    currentTaskIndex = 4; // Keep at 4, so it does not go beyond array
-                    updateTask();
-                    completeRepair(); // Call function for completing
-                }
-                else {
-                    // Handle incorrect interaction (e.g., Bonnie attacks)
-                    bonnieAttack();
-                }
-            }
-        }
-
-        function updateTask() {
-            if (currentTaskIndex >= instructions.length) {
-                completeRepair();
-            }
-            drawInstructions();
-        }
-
-        function bonnieAttack() {
-            if (gameOver || gameWon) return;
-
-            bonnieState = "attacking";
-            interactionEnabled = false;
-            // Play attack sound
-            if (attackSound) {
-                attackSound.stop();
-                attackSound.play();
-            }
-
-            // Trigger jump scare animation (assuming you have one)
-            const attackClip = bonnie.animations.find(clip => clip.name === "jumpscare"); //  Make sure the name matches your model
-                if (attackClip) {
-                    const action = mixer.clipAction(attackClip);
-                    action.reset();
-                    action.play();
-                } else {
-                    console.warn("No 'jumpscare' animation found for Bonnie.");
-                }
-            // Show Game Over screen after delay
-            jumpScareTimeout = setTimeout(() => {
-                gameOver = true;
-                drawInstructions();
-                showGameOverScreen();
-            }, 1000); // Adjust delay as needed
-        }
-
-        function completeRepair() {
-            if (gameOver || gameWon) return;
-            bonnieState = "repaired";
-            interactionEnabled = false;
-            gameWon = true; // Set win flag
-             if (ambientSound) {
-                ambientSound.stop();
-            }
-            drawInstructions();
-            showSuccessScreen(); // Show success screen
-        }
-
-        function showGameOverScreen() {
-            gameOverOverlay.style.display = 'flex';
-            if (attackSound) {
-                attackSound.stop();
-            }
-
-        }
-        function showSuccessScreen() { // Function to show success screen
-            successOverlay.style.display = 'flex';
-             if (ambientSound) {
-                ambientSound.stop();
-            }
-        }
-
-        function resetGame() {
-            gameOver = false;
-            gameWon = false; // Reset win flag
-            gameOverOverlay.style.display = 'none';
-            successOverlay.style.display = 'none'; // Hide success screen
-            currentTaskIndex = 0;
-            taskCompleted = [false, false, false, false, false]; // Reset task completion, added 5th
-            interactionEnabled = true;
-            bonnieState = "idle";
-
-            // Reset Bonnie's position and animation
-            if (bonnie) {
-                bonnie.position.set(0, 0, 0);
-                if (mixer) {
-                   mixer.stopAllAction();
-                    const twitchClip = bonnie.animations.find(clip => clip.name === "twitch"); //  Make sure the name matches your model
-                    if (twitchClip) {
-                        const action = mixer.clipAction(twitchClip);
-                        action.play();
-                    }
-                }
-            }
-             if (ambientSound) {
-                ambientSound.play();
-            }
-
-            // Clear any timeouts
-            if (jumpScareTimeout) {
-                clearTimeout(jumpScareTimeout);
-            }
-            init(); //restart
-        }
-
-
-        function render() {
-            requestAnimationFrame(render);
-
-            if (mixer) {
-                mixer.update(clock.getDelta());
-            }
-
-            // Flicker light
-            if (light) {
-                light.intensity = Math.random() * 0.5 + 0.5; // Flicker between 0.5 and 1
-            }
-
-            drawInstructions();
-            renderer.render(scene, camera);
-        }
-
-        // Event listeners
-        window.addEventListener('resize', resizeCanvas);
-        canvas.addEventListener('mousedown', handleInteraction);
-        restartButton.addEventListener('click', resetGame);
-        restartSuccessButton.addEventListener('click', resetGame); // Restart button for success screen
-
-
-        init(); // Start the game
-
-
+        setTimeout(() => {
+            addNotification('System update available');
+        }, 5000);
     </script>
 </body>
-</html>
+            </html>
+                
